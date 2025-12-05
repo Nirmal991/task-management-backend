@@ -45,7 +45,7 @@ export const signUp: RequestHandler = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashed = await bcrypt.hash(password, salt);
 
-    const user = new User({ username, email, password: hashed });
+    const user = new User({ username, email, password: hashed,orgs: [] });
     await user.save();
 
     const token = createToken(user);
@@ -57,6 +57,7 @@ export const signUp: RequestHandler = async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        orgs: user.orgs,
       },
     });
   } catch (error) {

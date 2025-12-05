@@ -8,8 +8,8 @@ const ensureOrgMember = async (orgId: string, userId: string) => {
   const org = await Organization.findById(orgId);
   if (!org) return { org: null, isMember: false };
 
-  const isMember = org.members.some((m) => m.user.toString() === userId);
-  return { org, isMember };
+  
+  return { org };
 };
 
 //Create Project

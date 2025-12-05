@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import { AuthRequest, createOrgSchema } from "../lib";
 import Organization from "../models/organization.model";
+import User from "../models/user.model";
 
 //Create Org
 export const createOrg: RequestHandler = async (req: AuthRequest,res)=>{
@@ -21,15 +22,25 @@ export const createOrg: RequestHandler = async (req: AuthRequest,res)=>{
     const { name, domain } = value;
 
     try{
-        const org = await Organization.create({
-            name,
-            domain,
-            members: [{ user: req.user.id, role: "owner" }],
-        })
+        const org = await Organization.create({name,domain})
+
+        await User.findByIdAndUpdate(
+          req.user.id,
+          {
+            $push: {
+              orgs: {
+                orgId: org._id,
+                role: "owner",
+                joiningStatus: "accepted",
+              }
+            }
+          },
+          {new: true}
+        );
 
         return res.status(200).json({
             message: "Organization created Successfully",
-            data: org,
+            organization: org,
         });
     }catch(error){
         console.error(error);
@@ -46,14 +57,15 @@ export const getOrg: RequestHandler = async (req: AuthRequest,res) => {
   const { id } = req.params;
 
   try {
-    const org = await Organization.findById(id).populate("members.user", "username email");
+    const org = await Organization.findById(id)
     if(!org){
         return res.status(404).json({message: "Organization not found"})
     }
-
-    const isMember = org.members.some((m) => m.user.toString() === req.user!.id);
-    if (!isMember) {
-      return res.status(403).json({ message: "You are not a member of this organization" });
+    const inOrg = await isUserInOrg(req.user.id, id);
+    if (!inOrg) {
+      return res
+        .status(403)
+        .json({ message: "You are not a member of this organization" });
     }
 
     return res.json({ organization: org });
@@ -61,4 +73,14 @@ export const getOrg: RequestHandler = async (req: AuthRequest,res) => {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
   }
+}
+
+//Helper Function
+export const isUserInOrg = async (userId: string, orgId: string) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    return false;
+  }
+
+  return user.orgs.some((val) => val.orgId.toString() === orgId && val.joiningStatus === 'accepted')
 }

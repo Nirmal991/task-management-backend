@@ -4,6 +4,7 @@ import { IUser } from "../models";
 import User from '../models/user.model'
 import { RequestHandler } from "express";
 import bcrypt from "bcryptjs";
+import Organization from "../models/organization.model";
 
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is missing in environment variables");
@@ -46,6 +47,22 @@ export const signUp: RequestHandler = async (req, res) => {
     const hashed = await bcrypt.hash(password, salt);
 
     const user = new User({ username, email, password: hashed,orgs: [] });
+
+    const orgName = `${username}'s org`;
+    const orgDomain = `${username.toLowerCase()}.com`;
+
+    const org = await Organization.create({
+      name: orgName,
+      domain: orgDomain
+    });
+
+    user.orgs.push({
+      orgId: org._id,
+      role: "owner",
+      joiningStatus: "accepted",
+    });
+
+
     await user.save();
 
     const token = createToken(user);
@@ -54,10 +71,17 @@ export const signUp: RequestHandler = async (req, res) => {
       message: "User registered successfully",
       token,
       data: {
+        user: {
         id: user._id,
         username: user.username,
         email: user.email,
         orgs: user.orgs,
+        },
+        organization: {
+          id: org._id,
+          name: org.name,
+          domain: org.domain,
+        },
       },
     });
   } catch (error) {
@@ -143,3 +167,5 @@ export const getUserById: RequestHandler = async (req,res) => {
     console.error(error)
   }
 }
+
+//signOut

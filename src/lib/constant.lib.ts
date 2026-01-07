@@ -14,13 +14,13 @@ export const LIMIT = 10
 export const PORT = parseInt(process.env.PORT || '3000')
 export const HOST = process.env.HOST || '0.0.0.0'
 
-// export const SMTP_FROM = process.env.SMTP_FROM as string
-// export const SMTP_REPLY_TO = process.env.SMTP_REPLY_TO as string
-// export const SMTP_USER = process.env.SMTP_USER as string
-// export const SMTP_PASS = process.env.SMTP_PASS as string
-// export const SMTP_HOST = process.env.SMTP_HOST as string
-// export const SMTP_PORT = parseInt(process.env.SMTP_PORT as string)
-// export const SMTP_SECURE = process.env.SMTP_SECURE === 'true'
+export const SMTP_FROM = process.env.SMTP_FROM as string
+export const SMTP_REPLY_TO = process.env.SMTP_REPLY_TO as string
+export const SMTP_USER = process.env.SMTP_USER as string
+export const SMTP_PASS = process.env.SMTP_PASS as string
+export const SMTP_HOST = process.env.SMTP_HOST as string
+export const SMTP_PORT = parseInt(process.env.SMTP_PORT as string)
+export const SMTP_SECURE = process.env.SMTP_SECURE === 'true'
 
 export const MONGO_URI = process.env.MONGO_URI as string
 export const JWT_SECRET = process.env.JWT_SECRET as string

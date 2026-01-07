@@ -1,25 +1,27 @@
-// import { createTransport } from 'nodemailer'
+import { createTransport } from 'nodemailer'
 
-// import {
+import {
 //   NAME,
 //   SMTP_FROM,
-//   SMTP_HOST,
-//   SMTP_PASS,
-//   SMTP_PORT,
+  SMTP_HOST,
+  SMTP_PASS,
+  SMTP_PORT,
 //   SMTP_REPLY_TO,
-//   SMTP_SECURE,
-//   SMTP_USER,
-// } from './constant.lib'
+  SMTP_SECURE,
+  SMTP_USER,
+} from './constant.lib'
 
-// const transporter = createTransport({
-//   host: SMTP_HOST,
-//   secure: SMTP_SECURE,
-//   port: SMTP_PORT,
-//   auth: {
-//     user: SMTP_USER,
-//     pass: SMTP_PASS,
-//   },
-// })
+
+export const transporter = createTransport({
+  service: 'gmail',
+  host: SMTP_HOST,
+  secure: SMTP_SECURE,
+  port: SMTP_PORT,
+  auth: {
+    user: SMTP_USER,
+    pass: SMTP_PASS,
+  },
+})
 
 // export const sendEmail = async (
 //   to: string,

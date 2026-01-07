@@ -81,3 +81,7 @@ export const addCommentSchema = Joi.object({
 export const assignTaskSchema = Joi.object({
   assignees: Joi.array().items(Joi.string().hex().length(24)).min(1).required(),
 });
+
+export const inviteMemberSchema = Joi.object({
+  email: Joi.string().email().required(),
+});

@@ -1,4 +1,4 @@
-// export * from './email.lib'
+export * from './email.lib'
 export * from './db.lib'
 // export * from './calculator.lib'
 export * from './common.lib'

@@ -1,14 +1,17 @@
 import { RequestHandler } from "express";
 import crypto from "crypto";
-import { AuthRequest, inviteMemberSchema, sendEmail } from "../lib";
+import {
+  AuthRequest,
+  generatePassword,
+  inviteMemberSchema,
+  sendEmail,
+} from "../lib";
 import Organization from "../models/organization.model";
 import User from "../models/user.model";
 import Invitation from "../models/orgInvite.model";
+import bcrypt from "bcryptjs";
 
-export const inviteMembers: RequestHandler = async (
-  req: AuthRequest,
-  res
-) => {
+export const inviteMembers: RequestHandler = async (req: AuthRequest, res) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -74,18 +77,13 @@ export const inviteMembers: RequestHandler = async (
   }
 };
 
-
 export const acceptOrgInvite: RequestHandler = async (
   req: AuthRequest,
   res
 ) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  const { token } = req.body ;
+  const { token } = req.query;
   console.log("token", token);
-  
+
   if (!token) {
     return res.status(400).json({ message: "Invite token is required" });
   }
@@ -106,10 +104,38 @@ export const acceptOrgInvite: RequestHandler = async (
       await invite.save();
       return res.status(400).json({ message: "Invitation has expired" });
     }
-    const user = await User.findById(req.user.id);
+    let user = await User.findOne({ email: invite.email });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      // return res.status(404).json({ message: "User not found" });
+      const password = generatePassword();
+      const salt = await bcrypt.genSalt(10);
+      const hashed = await bcrypt.hash(password, salt);
+      const username = invite.email.split("@")[0];
+
+      // org create
+      const orgName = `${username}'s org`;
+      const orgDomain = `${username.toLowerCase()}.com`;
+
+      const org = await Organization.create({
+        name: orgName,
+        domain: orgDomain,
+      });
+
+      user = new User({
+        username,
+        email: invite.email,
+        password: hashed,
+        orgs: [
+          {
+            orgId: org._id,
+            role: "owner",
+            joiningStatus: "accepted",
+          },
+        ],
+      });
+
+      await sendEmail(invite.email, "Welcome", `Password: ${password}`);
     }
     user.orgs.push({
       orgId: invite.orgId,

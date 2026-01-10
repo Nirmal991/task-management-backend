@@ -1,12 +1,12 @@
 import { createTransport } from 'nodemailer'
 
 import {
-//   NAME,
-//   SMTP_FROM,
+  NAME,
+  SMTP_FROM,
   SMTP_HOST,
   SMTP_PASS,
   SMTP_PORT,
-//   SMTP_REPLY_TO,
+  SMTP_REPLY_TO,
   SMTP_SECURE,
   SMTP_USER,
 } from './constant.lib'
@@ -23,21 +23,21 @@ export const transporter = createTransport({
   },
 })
 
-// export const sendEmail = async (
-//   to: string,
-//   subject: string,
-//   html: string
-// ): Promise<void> => {
-//   try {
-//     await transporter.sendMail({
-//       to,
-//       html,
-//       subject: `${subject} - ${NAME}`,
-//       from: SMTP_FROM,
-//       replyTo: SMTP_REPLY_TO,
-//     })
-//   } catch (error) {
-//     console.error('Email Lib Send:-', error)
-//     throw error
-//   }
-// }
+export const sendEmail = async (
+  to: string,
+  subject: string,
+  html: string
+): Promise<void> => {
+  try {
+    await transporter.sendMail({
+      to,
+      html,
+      subject: `${subject} - ${NAME}`,
+      from: SMTP_FROM,
+      replyTo: SMTP_REPLY_TO,
+    })
+  } catch (error) {
+    console.error('Email Lib Send:-', error)
+    throw error
+  }
+}

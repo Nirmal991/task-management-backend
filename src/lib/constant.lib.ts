@@ -10,7 +10,7 @@ export const LIMIT = 10
 
 // export const BASE_URL = process.env.BASE_URL || 'https://api.ecocrest.in'
 // export const IS_PRODUCTION = process.env.NODE_ENV === 'production'
-// export const NAME = process.env.NAME || 'ecocrest'
+export const NAME = process.env.transporter || 'ecocrest'
 export const PORT = parseInt(process.env.PORT || '3000')
 export const HOST = process.env.HOST || '0.0.0.0'
 

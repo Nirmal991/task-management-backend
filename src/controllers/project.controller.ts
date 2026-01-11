@@ -2,13 +2,13 @@ import { RequestHandler } from "express";
 import Organization from "../models/organization.model";
 import Project from "../models/project.model";
 import { AuthRequest, createProjectSchema, updateProjectSchema } from "../lib";
+import mongoose, { Types } from "mongoose";
+
 
 //check User
 const ensureOrgMember = async (orgId: string, userId: string) => {
   const org = await Organization.findById(orgId);
   if (!org) return { org: null, isMember: false };
-
-  
   return { org };
 };
 
@@ -19,6 +19,7 @@ export const createProject: RequestHandler = async (req: AuthRequest, res) => {
   }
 
   const { orgId } = req.params;
+  const {userIds} = req.body;
 
   const { error, value } = createProjectSchema.validate(req.body, {
     abortEarly: false,
@@ -31,27 +32,21 @@ export const createProject: RequestHandler = async (req: AuthRequest, res) => {
     });
   }
 
-  const { name, description, startDate, endDate } = value;
+  const { name, description } = value;
 
   try {
     //check the user
-    const { org, isMember } = await ensureOrgMember(orgId, req.user.id);
+    const { org } = await ensureOrgMember(orgId, req.user.id);
     if (!org) {
       return res.status(404).json({ message: "Organization not found" });
     }
-    // if (!isMember) {
-    //   return res
-    //     .status(403)
-    //     .json({ message: "You are not a member of this organization" });
-    // }
+    const assignUser = userIds.map((data: string) => new Types.ObjectId(data))
 
     const project = await Project.create({
       organizationId: org._id,
       name,
       description,
-      startDate,
-      endDate,
-      members: [{ userId: req.user.id }],
+      members: assignUser,
     });
 
     return res.status(201).json({
@@ -77,11 +72,6 @@ export const getOrgProject: RequestHandler = async (req: AuthRequest, res) => {
     if (!org) {
       return res.status(404).json({ message: "Organization not found" });
     }
-    // if (!isMember) {
-    //   return res
-    //     .status(403)
-    //     .json({ message: "You are not a member of this organization" });
-    // }
 
     const projects = await Project.find({ organizationId: orgId });
 
@@ -114,12 +104,7 @@ export const getProjectById: RequestHandler = async (req: AuthRequest, res) => {
       project.organizationId.toString(),
       req.user.id
     );
-    // if (!isMember) {
-    //   return res
-    //     .status(403)
-    //     .json({ message: "You are not a member of this project/organization" });
-    // }
-
+    
     return res.json({
       message: "Project fetched successfully",
       data: project,

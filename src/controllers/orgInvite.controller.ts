@@ -46,15 +46,6 @@ export const inviteMembers: RequestHandler = async (req: AuthRequest, res) => {
 
     const token = crypto.randomBytes(32).toString("hex");
 
-    await Invitation.create({
-      orgId,
-      email,
-      token,
-      invitedBy: req.user.id,
-      status: "pending",
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 hours
-    });
-
     const inviteLink = `${process.env.CLIENT_URL}/accept-invite?token=${token}`;
 
     await sendEmail(
@@ -82,7 +73,7 @@ export const acceptOrgInvite: RequestHandler = async (
   res
 ) => {
   const { token } = req.query;
-  console.log("token", token);
+  // console.log("token", token);
 
   if (!token) {
     return res.status(400).json({ message: "Invite token is required" });
@@ -135,7 +126,7 @@ export const acceptOrgInvite: RequestHandler = async (
         ],
       });
 
-      await sendEmail(invite.email, "Welcome", `Password: ${password}`);
+      await sendEmail(invite.email, `Welcome, to the ${org.name}`, `Password: ${password}`);
     }
     user.orgs.push({
       orgId: invite.orgId,

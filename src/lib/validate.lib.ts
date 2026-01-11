@@ -41,8 +41,7 @@ export const createOrgSchema = Joi.object({
 export const createProjectSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
   description: Joi.string().allow("", null),
-  startDate: Joi.date().optional(),
-  endDate: Joi.date().min(Joi.ref("startDate")).optional(),
+  members: Joi.array().items(Joi.string().hex().length(24)).default([])
 });
 
 export const updateProjectSchema = Joi.object({

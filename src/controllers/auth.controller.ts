@@ -1,7 +1,7 @@
 import jwt, { SignOptions } from "jsonwebtoken";
-import { JWT_SECRET, loginSchema, signUpSchema } from "../lib";
+import { JWT_SECRET, loginSchema, sendEmail, signUpSchema } from "../lib";
 import { IUser } from "../models";
-import User from '../models/user.model'
+import User from "../models/user.model";
 import { RequestHandler } from "express";
 import bcrypt from "bcryptjs";
 import Organization from "../models/organization.model";
@@ -46,22 +46,29 @@ export const signUp: RequestHandler = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashed = await bcrypt.hash(password, salt);
 
-    const user = new User({ username, email, password: hashed,orgs: [] });
+    const user = new User({ username, email, password: hashed, orgs: [] });
 
     const orgName = `${username}'s org`;
     const orgDomain = `${username.toLowerCase()}.com`;
 
     const org = await Organization.create({
       name: orgName,
-      domain: orgDomain
+      domain: orgDomain,
     });
 
+    await sendEmail(
+      email,
+      "Welcome to our application, hope it would be helpful",
+      `
+    <h2>Welcome, ${username}</h2>
+    <p>Your workspace <b>${org.name}</b> has been created successfully.</p>
+  `
+    );
     user.orgs.push({
       orgId: org._id,
       role: "owner",
       joiningStatus: "accepted",
     });
-
 
     await user.save();
 
@@ -72,10 +79,10 @@ export const signUp: RequestHandler = async (req, res) => {
       token,
       data: {
         user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        orgs: user.orgs,
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          orgs: user.orgs,
         },
         organization: {
           id: org._id,
@@ -90,20 +97,21 @@ export const signUp: RequestHandler = async (req, res) => {
   }
 };
 
-export const login: RequestHandler = async (req,res) => {
+export const login: RequestHandler = async (req, res) => {
+  const { error, value } = loginSchema.validate(req.body, {
+    abortEarly: false,
+  });
 
-    const { error, value } = loginSchema.validate(req.body, { abortEarly: false });
-
-    if (error) {
+  if (error) {
     return res.status(400).json({
       message: "Validation error",
       errors: error.details.map((error) => error.message),
     });
   }
 
-   const { username, password } = value;
+  const { username, password } = value;
 
-    try {
+  try {
     const user = await User.findOne({ username });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -125,14 +133,13 @@ export const login: RequestHandler = async (req,res) => {
         email: user.email,
       },
     });
-}catch(error){
-
+  } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
-}
+  }
 };
 
-export const getAllUser: RequestHandler = async (req,res) =>{
+export const getAllUser: RequestHandler = async (req, res) => {
   try {
     const user = await User.find().select("-password");
 
@@ -144,18 +151,16 @@ export const getAllUser: RequestHandler = async (req,res) =>{
     console.error(error);
     return res.status(500).json({ message: "Server error" });
   }
-}
+};
 
 //Get User By Id
-export const getUserById: RequestHandler = async (req,res) => {
-
+export const getUserById: RequestHandler = async (req, res) => {
   const { id } = req.params;
 
-  try{
+  try {
+    const user = await User.findById(id).select("-password");
 
-     const user = await User.findById(id).select("-password");
-
-    if(!user){
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
@@ -163,9 +168,9 @@ export const getUserById: RequestHandler = async (req,res) => {
       message: "User fetched successfully",
       data: user,
     });
-  }catch(error){
-    console.error(error)
+  } catch (error) {
+    console.error(error);
   }
-}
+};
 
 //signOut

@@ -41,15 +41,11 @@ export const createOrgSchema = Joi.object({
 export const createProjectSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
   description: Joi.string().allow("", null),
-  members: Joi.array().items(Joi.string().hex().length(24)).default([])
+  userIds: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .optional()
+    .default([]),
 });
-
-export const updateProjectSchema = Joi.object({
-  name: Joi.string().min(2).max(100),
-  description: Joi.string().allow("", null),
-  startDate: Joi.date(),
-  endDate: Joi.date().min(Joi.ref("startDate")),
-}).min(1);
 
 export const createTaskSchema = Joi.object({
   title: Joi.string().min(2).max(200).required(),
@@ -63,15 +59,19 @@ export const createTaskSchema = Joi.object({
   dueDate: Joi.date().optional(),
 });
 
-export const updateTaskSchema = Joi.object({
-  title: Joi.string().min(2).max(200),
-  description: Joi.string().allow("", null),
-  status: Joi.string().valid("pending", "in_progress", "completed", "cancelled"),
-  priority: Joi.string().valid("low", "medium", "high"),
-  assignees: Joi.array().items(Joi.string().hex().length(24)),
-  watchers: Joi.array().items(Joi.string().hex().length(24)),
-  dueDate: Joi.date(),
+export const updateProjectSchema = Joi.object({
+  name: Joi.string().min(2).max(100).optional(),
+  description: Joi.string().allow("", null).optional(),
+
+  addMembers: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .optional(),
+
+  removeMembers: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .optional(),
 }).min(1);
+
 
 export const addCommentSchema = Joi.object({
   text: Joi.string().min(1).max(1000).required(),

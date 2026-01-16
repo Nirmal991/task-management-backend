@@ -6,8 +6,6 @@ export interface IProject extends Document {
   name: string;
   description?: string;
   members: Types.ObjectId[]; 
-  startDate?: Date;
-  endDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +39,11 @@ const ProjectSchema = new Schema<IProject>(
   {
     timestamps: true,
   }
+);
+
+ProjectSchema.index(
+  { organizationId: 1, name: 1 },
+  { unique: true }
 );
 
 const Project = model<IProject>("Project", ProjectSchema);

@@ -5,8 +5,7 @@ import { AuthRequest, createProjectSchema, updateProjectSchema } from "../lib";
 import mongoose, { Types } from "mongoose";
 import User from "../models/user.model";
 
-
-const ensureOrgMember = async (orgId: string, userId: string) => {
+export const ensureOrgMember = async (orgId: string, userId: string) => {
   const [org, user] = await Promise.all([
     Organization.findById(orgId),
     User.findOne({
@@ -23,11 +22,8 @@ const ensureOrgMember = async (orgId: string, userId: string) => {
   return { org, user };
 };
 
-
-export const createProject: RequestHandler = async (
-  req: AuthRequest,
-  res
-) => {
+//Owner can only create project
+export const createProject: RequestHandler = async (req: AuthRequest, res) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -48,7 +44,6 @@ export const createProject: RequestHandler = async (
   const { name, description, userIds = [] } = value;
 
   try {
-    // 1️⃣ Check org + creator membership
     const { org, user } = await ensureOrgMember(orgId, req.user.id);
     if (!org || !user) {
       return res
@@ -56,7 +51,19 @@ export const createProject: RequestHandler = async (
         .json({ message: "Not a member of this organization" });
     }
 
-    // 2️⃣ Validate assigned users belong to org
+    const isOwner = user.orgs.some(
+      (o) =>
+        o.orgId.toString() === orgId &&
+        o.role === "owner" &&
+        o.joiningStatus === "accepted"
+    );
+
+    if (!isOwner) {
+      return res
+        .status(403)
+        .json({ message: "Only Owner can create the Organization" });
+    }
+
     const assignedUsers = await User.find({
       _id: { $in: userIds },
       "orgs.orgId": orgId,
@@ -65,17 +72,15 @@ export const createProject: RequestHandler = async (
 
     const memberIds = assignedUsers.map((u) => u._id);
 
-    // 3️⃣ Always include creator
     if (!memberIds.some((id) => id.equals(req.user!.id))) {
       memberIds.push(new Types.ObjectId(req.user!.id));
     }
 
-    // 4️⃣ Create project
     const project = await Project.create({
       organizationId: org._id,
       name,
       description,
-      members: memberIds, // ✅ matches schema
+      members: memberIds,
     });
 
     return res.status(201).json({
@@ -88,12 +93,8 @@ export const createProject: RequestHandler = async (
   }
 };
 
-
 //Get Project of specific org
-export const getOrgProject: RequestHandler = async (
-  req: AuthRequest,
-  res
-) => {
+export const getOrgProject: RequestHandler = async (req: AuthRequest, res) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -126,12 +127,8 @@ export const getOrgProject: RequestHandler = async (
   }
 };
 
-
 // get project By Id
-export const getProjectById: RequestHandler = async (
-  req: AuthRequest,
-  res
-) => {
+export const getProjectById: RequestHandler = async (req: AuthRequest, res) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -178,12 +175,8 @@ export const getProjectById: RequestHandler = async (
   }
 };
 
-
 //Update the project byID
-export const updateProject: RequestHandler = async (
-  req: AuthRequest,
-  res
-) => {
+export const updateProject: RequestHandler = async (req: AuthRequest, res) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -220,18 +213,16 @@ export const updateProject: RequestHandler = async (
     }
 
     // 3️⃣ Ensure project access (project member OR org owner)
-    const isProjectMember = project.members.some((id) =>
-      id.equals(req.user!.id)
-    );
-    const isOrgOwner = user.orgs.some(
+    const isOwner = user.orgs.some(
       (o) =>
         o.orgId.toString() === project.organizationId.toString() &&
-        o.role === "owner"
+        o.role === "owner" &&
+        o.joiningStatus === "accepted"
     );
 
-    if (!isProjectMember && !isOrgOwner) {
+    if (!isOwner) {
       return res.status(403).json({
-        message: "You do not have permission to update this project",
+        message: "Only organization owners can update projects",
       });
     }
 
@@ -288,12 +279,8 @@ export const updateProject: RequestHandler = async (
   }
 };
 
-
 //detele project by Id
-export const deleteProject: RequestHandler = async (
-  req: AuthRequest,
-  res
-) => {
+export const deleteProject: RequestHandler = async (req: AuthRequest, res) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -318,21 +305,16 @@ export const deleteProject: RequestHandler = async (
         message: "You are not a member of this organization",
       });
     }
-
-    // 3️⃣ Only project members OR org owners can delete
-    const isProjectMember = project.members.some((id) =>
-      id.equals(req.user!.id)
-    );
-
-    const isOrgOwner = user.orgs.some(
+    const isOwner = user.orgs.some(
       (o) =>
         o.orgId.toString() === project.organizationId.toString() &&
-        o.role === "owner"
+        o.role === "owner" &&
+        o.joiningStatus === "accepted"
     );
 
-    if (!isProjectMember && !isOrgOwner) {
+    if (!isOwner) {
       return res.status(403).json({
-        message: "You do not have permission to delete this project",
+        message: "Only organization owners can update projects",
       });
     }
 

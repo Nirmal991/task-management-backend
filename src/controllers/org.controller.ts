@@ -3,6 +3,14 @@ import { AuthRequest, createOrgSchema } from "../lib";
 import Organization from "../models/organization.model";
 import User from "../models/user.model";
 
+export const isUserInOrg = async (userId: string, orgId: string) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    return false;
+  }
+
+  return user.orgs.some((val) => val.orgId.toString() === orgId && val.joiningStatus === 'accepted')
+}
 //Create Org
 export const createOrg: RequestHandler = async (req: AuthRequest,res)=>{
 
@@ -75,12 +83,47 @@ export const getOrg: RequestHandler = async (req: AuthRequest,res) => {
   }
 }
 
-//Helper Function
-export const isUserInOrg = async (userId: string, orgId: string) => {
-  const user = await User.findById(userId);
-  if (!user) {
-    return false;
+// get all Members of org
+export const getAllMembers: RequestHandler = async (
+  req: AuthRequest,
+  res
+) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
-  return user.orgs.some((val) => val.orgId.toString() === orgId && val.joiningStatus === 'accepted')
-}
+  const { orgId } = req.params;
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const isOwner = user.orgs.some(
+      (o) =>
+        o.orgId.toString() === orgId &&
+        o.role === "owner" &&
+        o.joiningStatus === "accepted"
+    );
+
+    if (!isOwner) {
+      return res.status(403).json({
+        message: "Only organization owners can view members",
+      });
+    }
+
+    const members = await User.find({
+      "orgs.orgId": orgId,
+      "orgs.joiningStatus": "accepted",
+    }).select("_id username email");
+
+    return res.status(200).json({
+      message: "Organization members fetched successfully",
+      data: members,
+    });
+  } catch (error) {
+    console.error("Get org members error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+

@@ -50,13 +50,11 @@ export const createProjectSchema = Joi.object({
 export const createTaskSchema = Joi.object({
   title: Joi.string().min(2).max(200).required(),
   description: Joi.string().allow("", null),
-  status: Joi.string()
-    .valid("pending", "in_progress", "completed", "cancelled")
-    .default("pending"),
   priority: Joi.string().valid("low", "medium", "high").default("medium"),
-  assignees: Joi.array().items(Joi.string().hex().length(24)).optional(),
-  watchers: Joi.array().items(Joi.string().hex().length(24)).optional(),
   dueDate: Joi.date().optional(),
+  assignees: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .default([]),
 });
 
 export const updateProjectSchema = Joi.object({
@@ -72,15 +70,29 @@ export const updateProjectSchema = Joi.object({
     .optional(),
 }).min(1);
 
-
-export const addCommentSchema = Joi.object({
-  text: Joi.string().min(1).max(1000).required(),
-});
-
-export const assignTaskSchema = Joi.object({
-  assignees: Joi.array().items(Joi.string().hex().length(24)).min(1).required(),
-});
-
 export const inviteMemberSchema = Joi.object({
   email: Joi.string().email().required(),
 });
+
+export const updateTaskSchema = Joi.object({
+  title: Joi.string().min(2).max(200).optional(),
+  description: Joi.string().allow("", null).optional(),
+
+  status: Joi.string()
+    .valid("pending", "in_progress", "completed", "cancelled")
+    .optional(),
+
+  priority: Joi.string()
+    .valid("low", "medium", "high")
+    .optional(),
+
+  dueDate: Joi.date().allow(null).optional(),
+
+  addAssignees: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .optional(),
+
+  removeAssignees: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .optional(),
+}).min(1);

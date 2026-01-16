@@ -1,4 +1,4 @@
-import mongoose, { model, Schema, Types } from "mongoose";
+import { model, Schema, Types, Document } from "mongoose";
 
 export type TaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
 export type TaskPriority = "low" | "medium" | "high";
@@ -9,20 +9,19 @@ export interface ITaskAttachment {
   uploadedAt: Date;
 }
 
-export interface ITask extends Document{
-    organizationId: Types.ObjectId;
-    projectId: Types.ObjectId;
-    title: string;
-    description?: string;
-    status: TaskStatus;
-    priority: TaskPriority;
-    assignees: Types.ObjectId[];
-    watchers: Types.ObjectId[];
-    dueDate?: Date;
-    attachments: ITaskAttachment[]
-    createdBy: Types.ObjectId;
-    createdAt: Date;
-    updatedAt: Date;
+export interface ITask extends Document {
+  organizationId: Types.ObjectId;
+  projectId: Types.ObjectId;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  assignees: Types.ObjectId[]; 
+  dueDate?: Date;
+  attachments: ITaskAttachment[];
+  createdBy: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const TaskAttachmentSchema = new Schema<ITaskAttachment>(
@@ -35,31 +34,66 @@ const TaskAttachmentSchema = new Schema<ITaskAttachment>(
 );
 
 const TaskSchema = new Schema<ITask>(
-    {
-        organizationId: {
-            type: Schema.Types.ObjectId,
-            ref: "Organization",
-            required: true,
-        },
-        projectId: {
-            type: Schema.Types.ObjectId,
-            ref: "Project",
-            required: true
-        },
-        title: {type: String, required: true, trim: true},
-        description: {type: String, trim: true},
-        status: {type: String, enum:["pending", "in_progress", "completed", "cancelled"], default:'pending'},
-        priority: {type: String, enum: ['low','medium','high'], default: 'medium'},
-        assignees: [{type: Schema.Types.ObjectId, ref: 'Use'}],
-        watchers: [{type: Schema.Types.ObjectId, ref: 'User'}],
-        dueDate: {type: Date},
-        attachments: {type: [TaskAttachmentSchema], default: []},
-        createdBy: {type: Schema.Types.ObjectId, ref: 'User', required : true},
+  {
+    organizationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
     },
-    {timestamps: true}
-)
+
+    projectId: {
+      type: Schema.Types.ObjectId,
+      ref: "Project",
+      required: true,
+    },
+
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    description: {
+      type: String,
+      trim: true,
+    },
+
+    status: {
+      type: String,
+      enum: ["pending", "in_progress", "completed", "cancelled"],
+      default: "pending",
+    },
+
+    priority: {
+      type: String,
+      enum: ["low", "medium", "high"],
+      default: "medium",
+    },
+
+    assignees: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    dueDate: {
+      type: Date,
+    },
+
+    attachments: {
+      type: [TaskAttachmentSchema],
+      default: [],
+    },
+
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
 
 const Task = model<ITask>("Task", TaskSchema);
-
 export default Task;
-

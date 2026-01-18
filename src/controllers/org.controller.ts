@@ -127,3 +127,55 @@ export const getAllMembers: RequestHandler = async (
   }
 };
 
+//get all the orgs of a user
+export const getUserOrgs: RequestHandler = async (
+  req: AuthRequest,
+  res
+) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const { userId } = req.params;
+
+  try {
+    if (req.user.id !== userId) {
+      return res.status(403).json({
+        message: "You are not allowed to access this resource",
+      });
+    }
+    const user = await User.findById(userId).select("orgs");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const orgIds = user.orgs.map((o) => o.orgId);
+
+    const organizations = await Organization.find({
+      _id: { $in: orgIds },
+    }).select("_id name domain");
+
+    const response = user.orgs.map((membership) => {
+      const org = organizations.find(
+        (o) => o._id.toString() === membership.orgId.toString()
+      );
+
+      return {
+        orgId: membership.orgId,
+        name: org?.name,
+        domain: org?.domain,
+        role: membership.role,
+        joiningStatus: membership.joiningStatus,
+      };
+    });
+
+    return res.status(200).json({
+      message: "User organizations fetched successfully",
+      data: response,
+    });
+  } catch (error) {
+    console.error("Get user orgs error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+

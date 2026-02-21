@@ -56,7 +56,7 @@ export const signUp: RequestHandler = async (req, res) => {
       domain: orgDomain,
     });
 
-    await sendEmail(
+    await sendEmail(  
       email,
       "Welcome to our application, hope it would be helpful",
       `
